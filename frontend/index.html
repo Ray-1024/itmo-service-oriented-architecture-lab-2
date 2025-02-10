@@ -1,0 +1,39 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Frontend</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+
+<div id="chooseMode" class="framedBlock">
+    <div class="framedBlockHeader">Выбор действия</div>
+    <div>
+        <input type="button" value="Получить список путей" onclick="applyMode(modes.getRoutes)">
+        <input type="button" value="Получить путь по ID" onclick="applyMode(modes.getRoute)">
+        <input type="button" value="Создать путь" onclick="applyMode(modes.createRoute)">
+        <input type="button" value="Изменить путь по ID" onclick="applyMode(modes.updateRoute)">
+        <input type="button" value="Удалить путь по ID" onclick="applyMode(modes.deleteRoute)">
+        <input type="button" value="Получить размеры групп" onclick="applyMode(modes.groupInfo)">
+        <input type="button" value="Получить пути заданной длины" onclick="applyMode(modes.getDistanceRoute)">
+        <input type="button" value="Получить все пути между заданными локациями"
+               onclick="applyMode(modes.getNavigator)">
+        <input type="button" value="Создать путь между заданными локациями" onclick="applyMode(modes.createNavigator)">
+    </div>
+</div>
+
+<div id="requestDiv" class="framedBlock">
+    <div id="headerDiv" class="framedBlockHeader"></div>
+    <div id="fieldsDiv"></div>
+    <div id="errorDiv" class="errorBlock"></div>
+    <div id="submitDiv" class="framedBlockHeader"></div>
+    <div id="resultDiv" class="framedBlockResult"></div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

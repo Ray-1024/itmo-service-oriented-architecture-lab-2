@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  postgresql:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: studs
+      POSTGRES_USER: s335135
+      POSTGRES_PASSWORD: r9kNM3hIapwJL2N5

@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$/frontend">
+      <sourceFolder url="file://$MODULE_DIR$/frontend/collection-service-frontend" isTestSource="false" generated="true" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/dist" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/tmp" />
     </content>

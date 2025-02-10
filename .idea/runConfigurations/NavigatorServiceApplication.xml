@@ -1,5 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="NavigatorServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <option name="ALTERNATIVE_JRE_PATH" value="11" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <module name="navigator-service" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="soa.navigatorservice.NavigatorServiceApplication" />
     <method v="2">
