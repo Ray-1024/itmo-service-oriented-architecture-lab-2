@@ -10,7 +10,7 @@ import soa.navigatorservice.model.dto.CoordinatesDto;
 @NoArgsConstructor
 @Data
 @Builder
-public class CreateRouteRequest {
+public class NavigatorCreateRouteRequest {
     private CoordinatesDto coordinates;
     private String name;
 }

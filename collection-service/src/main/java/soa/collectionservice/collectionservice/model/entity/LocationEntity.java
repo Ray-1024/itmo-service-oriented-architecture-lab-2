@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import soa.collectionservice.collectionservice.model.dto.LocationDto;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class LocationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     private int x;
 
@@ -28,4 +29,15 @@ public class LocationEntity {
     @Size(max = 452)
     @NotNull
     private String name; //Длина строки не должна быть больше 452, Поле не может быть null
+
+    public static LocationEntity fromDto(LocationDto locationDto) {
+        if (locationDto == null) return null;
+        return LocationEntity.builder()
+                .id(null)
+                .x(locationDto.getX())
+                .y(locationDto.getY())
+                .z(locationDto.getZ())
+                .name(locationDto.getName())
+                .build();
+    }
 }

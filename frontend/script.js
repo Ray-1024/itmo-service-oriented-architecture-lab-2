@@ -1,202 +1,638 @@
-const urls = {
-    collectionService: 'http://localhost:22400/api/v1',
-    navigatorService: 'http://localhost:22401/api/v1/navigator'
+const utils = {
+    asString: function (id) {
+        let element = document.getElementById(id);
+        if (element != null) return element.value.toString();
+        else {
+            element = document.querySelector(`input[name="${id}"]:checked`).value;
+            return element;
+        }
+    },
+    toInt: function (value) {
+        if (value == null) return null;
+        let val = parseInt(value.toString())
+        return (isFinite(val) && val.toString() === value.toString()) ? val : null;
+    },
+    asInt: function (id) {
+        return this.toInt(this.asString(id))
+    },
+    toFloat: function (value) {
+        if (value == null) return null;
+        let val = parseFloat(value.toString().replace(",", "."));
+        return (isFinite(val) && val.toString() === value.toString().replace(",", ".")) ? val : null;
+    },
+    asFloat: function (id) {
+        return this.toFloat(this.asString(id))
+    },
+    isVisible: function (id) {
+        let element = document.getElementById(id);
+        if (element == null) return false;
+        return element.style.display === '';
+    },
+    show: function (id) {
+        let element = document.getElementById(id);
+        if (element != null) {
+            element.style.display = '';
+        }
+    },
+    hide: function (id) {
+        let element = document.getElementById(id);
+        if (element != null) {
+            element.style.display = 'none';
+        }
+    },
+    hideAllFields: function () {
+        this.hide('pagingDiv');
+        this.hide('hidePagingDiv');
+        this.hide('pageNumberDiv');
+        this.hide('pageSizeDiv');
+
+        this.hide('sortingDiv');
+        this.hide('hideSortingDiv');
+        this.hide('sortingFieldDiv');
+        this.hide('sortingOrderDiv');
+
+        this.hide('filteringDiv');
+        this.hide('hideFilteringDiv');
+        this.hide('filteringFieldDiv');
+        this.hide('filteringComparatorDiv');
+        this.hide('filteringValueDiv');
+
+        this.hide('routeDiv');
+        this.hide('routeIdDiv');
+        this.hide('routeNameDiv');
+        this.hide('routeCoordinatesXDiv');
+        this.hide('routeCoordinatesYDiv');
+        this.hide('routeCreationDateDiv');
+        this.hide('routeFromFramedBlock');
+        this.hide('hideFromDiv');
+        this.hide('routeFromXDiv');
+        this.hide('routeFromYDiv');
+        this.hide('routeFromZDiv');
+        this.hide('routeFromNameDiv');
+        this.hide('routeToXDiv');
+        this.hide('routeToYDiv');
+        this.hide('routeToZDiv');
+        this.hide('routeToNameDiv');
+        this.hide('routeDistanceDiv');
+    },
+    clearErrors: function () {
+        document.getElementById('errorDiv').innerHTML = '';
+    },
+    header: function (text) {
+        document.getElementById('headerDiv').innerText = text;
+    },
+    error: function (text) {
+        document.getElementById('errorDiv').innerHTML +=
+            '<div class="framedBlock">' +
+            text
+            + '</div>';
+    },
+    resultRouteTable: function (routes) {
+        let txt = '<table>';
+        txt += '<tr>';
+        txt += '<td>id</td>';
+        txt += '<td>name</td>';
+        txt += '<td>coordinates.x</td>';
+        txt += '<td>coordinates.y</td>';
+        txt += '<td>creationDate</td>';
+        txt += '<td>from.x</td>';
+        txt += '<td>from.y</td>';
+        txt += '<td>from.z</td>';
+        txt += '<td>from.name</td>';
+        txt += '<td>to.x</td>';
+        txt += '<td>to.y</td>';
+        txt += '<td>to.z</td>';
+        txt += '<td>to.name</td>';
+        txt += '<td>distance</td>';
+        txt += '</tr>';
+        routes.forEach(function (item) {
+            txt += '<tr>';
+            txt += '<td>' + item.id.toString() + '</td>';
+            txt += '<td>' + item.name.toString() + '</td>';
+            txt += '<td>' + item.coordinates.x.toString() + '</td>';
+            txt += '<td>' + item.coordinates.y.toString() + '</td>';
+            txt += '<td>' + item.creationDate.toString() + '</td>';
+            if (item.from != null) {
+                txt += '<td>' + item.from.x.toString() + '</td>';
+                txt += '<td>' + item.from.y.toString() + '</td>';
+                txt += '<td>' + item.from.z.toString() + '</td>';
+                txt += '<td>' + item.from.name.toString() + '</td>';
+            } else {
+                txt += '<td></td><td></td><td></td><td></td>';
+            }
+            txt += '<td>' + item.to.x.toString() + '</td>';
+            txt += '<td>' + item.to.y.toString() + '</td>';
+            txt += '<td>' + item.to.z.toString() + '</td>';
+            txt += '<td>' + item.to.name.toString() + '</td>';
+            txt += '<td>' + item.distance.toString() + '</td>';
+            txt += '</tr>';
+        });
+        txt += '</table>';
+        document.getElementById('resultDiv').innerText = txt;
+    },
+    resultGroupsInfo: function (groupsInfo) {
+        let txt = '<table>';
+        txt += '<tr>';
+        txt += '<td>name</td>';
+        txt += '<td>count</td>';
+        txt += '</tr>';
+        groupsInfo.forEach(function (item) {
+            txt += '<tr>';
+            txt += '<td>' + item.name.toString() + '</td>';
+            txt += '<td>' + item.count.toString() + '</td>';
+            txt += '</tr>';
+        });
+        txt += '</table>';
+        document.getElementById('resultDiv').innerText = txt;
+    },
+    resultText: function (text) {
+        document.getElementById('resultDiv').innerHTML = text;
+    },
+    handleErrorResponse: function (errorResponse) {
+        let txt = 'Ошибка: ' + errorResponse.message;
+        this.error(txt);
+    },
+    handleInvalidParamsResponse: function (invalidParamsResponse) {
+        let txt = 'Один или несколько введенных параметров неверны: ' + invalidParamsResponse.error.message;
+        this.error(txt);
+    },
+    handleNon200Response: function (response, data) {
+        try {
+            const error = this.parseXml(data);
+            if (response.status === 400 || response.status === 422) {
+                this.error('Неверно заполнено одно из полей');
+                this.handleInvalidParamsResponse(error);
+            } else if (response.status === 500) {
+                this.error('Внутренняя ошибка сервера');
+                this.handleErrorResponse(error);
+            } else if (response.status === 404) {
+                this.error('Произошла ошибка');
+                this.handleErrorResponse(error);
+            } else {
+                this.error('Неизвестная неизвестная ошибка');
+                console.log(response);
+                console.log(error);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    },
+    parseXml: function (xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+        function parseNode(node) {
+            const obj = {};
+            for (let i = 0; i < node.childNodes.length; i++) {
+                const child = node.childNodes[i];
+                if (child.nodeType === 1) {
+                    const nodeName = child.nodeName;
+                    const nodeValue = parseNode(child);
+                    if (obj[nodeName]) {
+                        if (!Array.isArray(obj[nodeName])) {
+                            obj[nodeName] = [obj[nodeName]];
+                        }
+                        obj[nodeName].push(nodeValue);
+                    } else {
+                        obj[nodeName] = nodeValue;
+                    }
+                } else if (child.nodeType === 3 && child.nodeValue.trim() !== "") {
+                    return child.nodeValue.trim();
+                }
+            }
+
+            return Object.keys(obj).length === 0 ? "" : obj;
+        }
+
+        return parseNode(xmlDoc.documentElement);
+    },
+    getFields: function () {
+        let fields = {};
+        if (utils.isVisible('pagingDiv') && utils.isVisible('pageSizeDiv') && utils.isVisible('pageNumberDiv')) {
+            fields.pageSize = utils.asInt('pageSize');
+            fields.pageNumber = utils.asInt('pageNumber');
+        }
+        if (utils.isVisible('sortingDiv') && utils.isVisible('sortingFieldDiv') && utils.isVisible('sortingOrderDiv')) {
+            fields.sorting = utils.asString('sortingOrder') + utils.asString('sortingField');
+
+        }
+        if (utils.isVisible('filteringDiv') && utils.isVisible('filteringFieldDiv') && utils.isVisible('filteringComparatorDiv') && utils.isVisible('filteringValueDiv')) {
+            fields.filtering =
+                utils.asString('filteringField') +
+                utils.asString('filteringComparator') +
+                utils.asString('filteringValue');
+        }
+        if (utils.isVisible('routeDiv')) {
+            if (utils.isVisible('routeIdDiv')) fields.routeId = utils.asInt('routeId');
+            if (utils.isVisible('routeNameDiv')) fields.routeName = utils.asString('routeName');
+            if (utils.isVisible('routeCoordinatesXDiv')) fields.routeCoordinatesX = utils.asInt('routeCoordinatesX');
+            if (utils.isVisible('routeCoordinatesYDiv')) fields.routeCoordinatesY = utils.asInt('routeCoordinatesY');
+            if (utils.isVisible('routeCreationDateDiv')) fields.routeCreationDate = utils.asString('routeCreationDate');
+            if (utils.isVisible('routeFromFramedBlock')) {
+                if (utils.isVisible('routeFromXDiv')) fields.routeFromX = utils.asInt('routeFromX');
+                if (utils.isVisible('routeFromYDiv')) fields.routeFromY = utils.asInt('routeFromY');
+                if (utils.isVisible('routeFromZDiv')) fields.routeFromZ = utils.asFloat('routeFromZ');
+                if (utils.isVisible('routeFromNameDiv')) fields.routeFromName = utils.asString('routeFromName');
+            }
+            if (utils.isVisible('routeToXDiv')) fields.routeToX = utils.asInt('routeToX');
+            if (utils.isVisible('routeToYDiv')) fields.routeToY = utils.asInt('routeToY');
+            if (utils.isVisible('routeToZDiv')) fields.routeToZ = utils.asFloat('routeToZ');
+            if (utils.isVisible('routeToNameDiv')) fields.routeToName = utils.asString('routeToName');
+            if (utils.isVisible('routeDistanceDiv')) fields.routeDistance = utils.asInt('routeDistance');
+        }
+        console.log(fields);
+        return fields;
+    },
 };
-
-const blocks = {
-    header: 'headerDiv',
-    fields: 'fieldsDiv',
-    error: 'errorDiv',
-    submit: 'submitDiv',
-    result: 'resultDiv'
-}
-
-
-const baseUi = {
-    pageNumber: '<div>Номер страницы: <input type="number" id="pageNumber" min="1" value="1"></div>',
-    pageSize: '<div>Размер страницы: <input type="number" id="pageSize" min="1" max="100" value="5"></div>',
-    // id|name|coordinates\.x|coordinates\.y|creationDate|from\.x|from\.y|from\.z|from\.name|to\.x|to\.y|to\.name|distance
-    sortingField: '<div>Поле для сортировки путей: <select id="sortingField">' +
-        '<option>id</option>' +
-        '<option>name</option>' +
-        '<option>coordinates.x</option>' +
-        '<option>coordinates.y</option>' +
-        '<option>creationDate</option>' +
-        '<option>from.x</option>' +
-        '<option>from.y</option>' +
-        '<option>from.z</option>' +
-        '<option>from.name</option>' +
-        '<option>to.x</option>' +
-        '<option>to.y</option>' +
-        '<option>to.name</option>' +
-        '<option>distance</option>' +
-        '</select></div>',
-    sortingOrder: '<div>Порядок сортировки: <input type="radio" name="sortingOrder" value="" checked>По неубыванию' +
-        '<input type="radio" name="sortingOrder" value="<">По невозрастанию</div>',
-    // (id|name|coordinates\.x|coordinates\.y|creationDate|from\.x|from\.y|from\.z|from\.name|to\.x|to\.y|to\.name|distance)(=|!=|>|<|>=|<=)(.+)
-    filteringField: '<div>Поле для фильтрации путей: <select id="filteringField">' +
-        '<option>id</option>' +
-        '<option>name</option>' +
-        '<option>coordinates.x</option>' +
-        '<option>coordinates.y</option>' +
-        '<option>creationDate</option>' +
-        '<option>from.x</option>' +
-        '<option>from.y</option>' +
-        '<option>from.z</option>' +
-        '<option>from.name</option>' +
-        '<option>to.x</option>' +
-        '<option>to.y</option>' +
-        '<option>to.name</option>' +
-        '<option>distance</option>' +
-        '</select></div>',
-    filteringComparator: '<div></div>',
-    filteringValue: '<div></div>',
-    routeId: '<div>Id: <input type="number" id="routeId" min="1" value="1"></div>',
-    routeName: '<div>Id: <input type="text"></div>',
-    routeCoordinatesX: '<div>Id: <input type="number"></div>',
-    routeCoordinatesY: '<div>Id: <input type="number"></div>',
-    routeCreationDate: '<div>Id: <input type="date" id="routeId"></div>',
-    routeFromX: '<div>Id: <input type="number"></div>',
-    routeFromY: '<div>Id: <input type="number"></div>',
-    routeFromZ: '<div>Id: <input type="number"></div>',
-    routeFromName: '<div>Id: <input type="text"></div>',
-    routeToX: '<div>Id: <input type="number"></div>',
-    routeToY: '<div>Id: <input type="number"></div>',
-    routeToZ: '<div>Id: <input type="number"></div>',
-    routeToName: '<div>Id: <input type="text"></div>',
-    routeDistance: '<div>Id: <input type="number"></div>',
-    submitButton: '<div><input type="button" value="Поехали" onclick="executeRequestWithMode()"></div>'
-}
-
-const ui = {
-    paging: '<div>' + baseUi.pageNumber + baseUi.pageSize + '</div>',
-    sorting: '<div>' + baseUi.sortingField + baseUi.sortingOrder + '</div>',
-    filtering: '<div>' + baseUi.filteringField + baseUi.filteringComparator + baseUi.filteringValue + '</div>',
-    routeWithoutAutogeneratedFields: '<div>' + '</div>',
-    routeAllFields: '<div>' + '</div>',
-    navigatorGetRoutes: '<div>' + '</div>',
-    navigatorCreateRoute: '<div>' + '</div>'
-}
 
 const modes = {
     getRoutes: {
-        headerText: "Получить список путей",
-        fieldsText: ui.paging + ui.sorting + ui.filtering,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Получение маршрутов');
+            utils.show('pagingDiv');
+            utils.show('hidePagingDiv');
+            utils.show('pageSizeDiv');
+            utils.show('pageNumberDiv');
+            utils.show('sortingDiv');
+            utils.show('hideSortingDiv');
+            utils.show('sortingFieldDiv');
+            utils.show('sortingOrderDiv');
+            utils.show('filteringDiv');
+            utils.show('hideFilteringDiv');
+            utils.show('filteringFieldDiv');
+            utils.show('filteringComparatorDiv');
+            utils.show('filteringValueDiv');
+        },
+        executeRequest: function () {
+            const url = new URL('http://localhost:22400/api/v1/routes');
+            const fields = utils.getFields();
+            if (fields.pageSize !== undefined ?? fields.pageNumber !== undefined) {
+                url.searchParams.append('pageSize', `${fields.pageSize}`);
+                url.searchParams.append('pageNumber', `${fields.pageNumber}`);
+            }
+            if (fields.sorting !== undefined) {
+                url.searchParams.append('sort', `${fields.sorting}`);
+            }
+            if (fields.filtering !== undefined) {
+                url.searchParams.append('filter', `${fields.filtering}`);
+            }
+            try {
+                const response = fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    },
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const routesResponse = utils.parseXml(data);
+                    utils.resultRouteTable(routesResponse.routes);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     createRoute: {
-        headerText: "Создать путь",
-        fieldsText: ui.routeWithoutAutogeneratedFields,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Создание маршрута');
+            utils.show('routeDiv');
+            utils.show('routeNameDiv');
+            utils.show('routeCoordinatesXDiv');
+            utils.show('routeCoordinatesYDiv');
+            utils.show('routeFromFramedBlock');
+            utils.show('hideFromDiv');
+            utils.show('routeFromXDiv');
+            utils.show('routeFromYDiv');
+            utils.show('routeFromZDiv');
+            utils.show('routeFromNameDiv');
+            utils.show('routeToXDiv');
+            utils.show('routeToYDiv');
+            utils.show('routeToZDiv');
+            utils.show('routeToNameDiv');
+            utils.show('routeDistanceDiv');
+        },
+        executeRequest: function () {
+            const url = new URL('http://localhost:22400/api/v1/routes');
+            const fields = utils.getFields();
+            let from = fields.routeFromX === undefined ? '' :
+                `<from>
+                    <x>${fields.routeFromX}</x>
+                    <y>${fields.routeFromY}</y>
+                    <z>${fields.routeFromZ}</z>
+                    <name>${fields.routeFromName}</name>
+                </from>`;
+            try {
+                const response = fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    },
+                    body: `
+                    <route>
+                    <name>${fields.routeName}</name>
+                    <coordinates>
+                        <x>${fields.routeCoordinatesX}</x>
+                        <y>${fields.routeCoordinatesY}</y>
+                    </coordinates>
+                    ${from}
+                    <to>
+                        <x>${fields.routeToX}</x>
+                        <y>${fields.routeToY}</y>
+                        <z>${fields.routeToZ}</z>
+                        <name>${fields.routeToName}</name>
+                    </to>
+                    <distance>${fields.routeDistance}</distance>
+                    </route>
+                    `
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const route = utils.parseXml(data);
+                    utils.resultRouteTable([route]);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     getRoute: {
-        headerText: "Получить путь по ID",
-        fieldsText: baseUi.routeId,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Поиск маршрута по ID');
+            utils.show('routeDiv');
+            utils.show('routeIdDiv');
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
+            try {
+                const response = fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml',
+                    },
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const route = utils.parseXml(data);
+                    utils.resultRouteTable([route]);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     updateRoute: {
-        headerText: "Изменить путь по ID",
-        fieldsText: ui.routeAllFields,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Изменение маршрута');
+            utils.show('routeDiv');
+            utils.show('routeIdDiv');
+            utils.show('routeNameDiv');
+            utils.show('routeCoordinatesXDiv');
+            utils.show('routeCoordinatesYDiv');
+            utils.show('routeCreationDateDiv');
+            utils.show('routeFromFramedBlock');
+            utils.show('hideFromDiv');
+            utils.show('routeFromXDiv');
+            utils.show('routeFromYDiv');
+            utils.show('routeFromZDiv');
+            utils.show('routeFromNameDiv');
+            utils.show('routeToXDiv');
+            utils.show('routeToYDiv');
+            utils.show('routeToZDiv');
+            utils.show('routeToNameDiv');
+            utils.show('routeDistanceDiv');
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
+            let from = fields.routeFromX === undefined ? '' :
+                `<from>
+                    <x>${fields.routeFromX}</x>
+                    <y>${fields.routeFromY}</y>
+                    <z>${fields.routeFromZ}</z>
+                    <name>${fields.routeFromName}</name>
+                </from>`;
+            try {
+                const response = fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    },
+                    body: `
+                    <route>
+                    <id>${fields.routeId}</id>
+                    <name>${fields.routeName}</name>
+                    <coordinates>
+                        <x>${fields.routeCoordinatesX}</x>
+                        <y>${fields.routeCoordinatesY}</y>
+                    </coordinates>
+                    <creationDate>${fields.routeCreationDate}</creationDate>
+                    ${from}
+                    <to>
+                        <x>${fields.routeToX}</x>
+                        <y>${fields.routeToY}</y>
+                        <z>${fields.routeToZ}</z>
+                        <name>${fields.routeToName}</name>
+                    </to>
+                    <distance>${fields.routeDistance}</distance>
+                    </route>
+                    `
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const route = utils.parseXml(data);
+                    utils.resultRouteTable([route]);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     deleteRoute: {
-        headerText: "Удалить путь по ID",
-        fieldsText: baseUi.routeId,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Удаление маршрута по ID');
+            utils.show('routeDiv');
+            utils.show('routeIdDiv');
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
+            try {
+                const response = fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml',
+                    },
+                });
+                const data = response.text();
+                if (response.status === 204) {
+                    utils.resultText('Маршрут успешно удален');
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     groupInfo: {
-        headerText: "Получить размеры групп",
-        fieldsText: "",
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Получение информации о группах');
+        },
+        executeRequest: function () {
+            const url = new URL('http://localhost:22400/api/v1/routes/name-groups-info');
+            try {
+                const response = fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    }
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const groupsInfo = utils.parseXml(data);
+                    utils.resultGroupsInfo(groupsInfo);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     getDistanceRoute: {
-        headerText: "Получить пути заданной длины",
-        fieldsText: baseUi.routeDistance,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Получение маршрутов заданной длины');
+            utils.show('routeDiv');
+            utils.show('routeDistanceDiv');
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL('http://localhost:22400/api/v1/routes/with-distance-count');
+            url.searchParams.append('distance', fields.routeDistance);
+            try {
+                const response = fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    }
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const count = utils.parseXml(data);
+                    utils.resultText(`Количество маршрутов с длиной ${fields.routeDistance} : ${count}`);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     getNavigator: {
-        headerText: "Получить все пути между заданными локациями",
-        fieldsText: ui.navigatorGetRoutes,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Получение маршрутов по названиям локаций');
+            utils.show('sortingDiv');
+            utils.show('sortingFieldDiv');
+            utils.show('sortingOrderDiv');
+            utils.show('routeDiv');
+            utils.show('routeFromFramedBlock');
+            utils.show('routeFromNameDiv');
+            utils.show('routeToNameDiv');
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL(`http://localhost:22401/api/v1/navigator/routes/${fields.routeFromName}/${fields.routeToName}/${fields.sorting}`);
+            try {
+                const response = fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    }
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const routes = utils.parseXml(data);
+                    utils.resultRouteTable(routes);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     },
     createNavigator: {
-        headerText: "Создать путь между заданными локациями",
-        fieldsText: ui.navigatorCreateRoute,
-        errorText: "",
-        submitText: baseUi.submitButton,
-        resultText: ""
+        activate: function () {
+            utils.header('Создание маршрута по названиям локаций');
+            utils.show('routeDiv');
+            utils.show('routeFromFramedBlock');
+            utils.show('routeNameDiv');
+            utils.show('routeCoordinatesXDiv');
+            utils.show('routeCoordinatesYDiv');
+            utils.show('routeFromNameDiv');
+            utils.show('routeToNameDiv');
+            utils.show('routeDistanceDiv');
+
+        },
+        executeRequest: function () {
+            const fields = utils.getFields();
+            const url = new URL(`http://localhost:22401/api/v1/navigator/routes/${fields.routeFromName}/${fields.routeToName}/${fields.routeDistance}`);
+            try {
+                const response = fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml'
+                    },
+                    body: `
+                    <request>
+                    <coordinates>
+                        <x>${fields.routeCoordinatesX}</x>
+                        <y>${fields.routeCoordinatesY}</y>
+                    </coordinates>
+                    <name>${fields.routeName}</name>
+                    </request>
+                    `
+                });
+                const data = response.text();
+                if (response.status === 200) {
+                    const route = utils.parseXml(data);
+                    utils.resultRouteTable([route]);
+                }
+                utils.handleNon200Response(response, data);
+            } catch (error) {
+                utils.error('Неизвестная ошибка');
+                console.log(error);
+            }
+        }
     }
 };
 
 let currentMode = modes.getRoutes;
 
-function setBlockInnerHtml(blockId, innerHtml) {
-    document.getElementById(blockId).innerHTML = innerHtml
-}
-
 function applyMode(mode) {
+    utils.hideAllFields();
+    utils.clearErrors();
     currentMode = mode;
-    setBlockInnerHtml(blocks.header, mode.headerText)
-    setBlockInnerHtml(blocks.fields, mode.fieldsText)
-    setBlockInnerHtml(blocks.error, mode.errorText)
-    setBlockInnerHtml(blocks.submit, mode.submitText)
-    setBlockInnerHtml(blocks.result, mode.resultText)
+    currentMode.activate();
 }
 
-applyMode(modes.getRoutes)
-
-/*function sendXML() {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', 'https://example.com/data.xml', true);
-
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            const xmlDoc = xhr.responseXML; // Получаем XML-документ
-            const items = xmlDoc.getElementsByTagName('item');
-            for (let i = 0; i < items.length; i++) {
-                console.log(items[i].getElementsByTagName('title')[0].textContent);
-            }
-        }
-    };
-
-    xhr.send();
-}*/
-
-/*function parseXML() {
-    const xmlString = "<root></root>";
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-    alert(xmlDoc.getElementsByName("root").length)
-}*/
-
-
-function validateFields() {
-    return true;
-}
-
-function executeRequestWithMode() {
-    if (validateFields()) {
-        fetch("https://ya.ru", {
-            mode: 'no-cors',
-            method: "get",
-        }).then(function (response) {
-            alert(response.status)
-        })
-    }
-}
+applyMode(modes.getRoutes);

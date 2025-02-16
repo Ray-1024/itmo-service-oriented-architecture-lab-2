@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import soa.collectionservice.collectionservice.model.dto.RouteDto;
 
 import java.util.Date;
 
@@ -21,7 +22,7 @@ public class RouteEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Min(value = 1)
-    private long id; //Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
+    private Long id; //Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
 
     @NotNull
     @NotBlank
@@ -41,6 +42,19 @@ public class RouteEntity {
     @ManyToOne
     private LocationEntity to; //Поле не может быть null
 
-    @Min(value = 1)
+    @Min(value = 2)
     private int distance; //Значение поля должно быть больше 1
+
+    public static RouteEntity fromDto(RouteDto routeDto) {
+        if (routeDto == null) return null;
+        return RouteEntity.builder()
+                .id(routeDto.getId())
+                .name(routeDto.getName())
+                .coordinates(CoordinatesEntity.fromDto(routeDto.getCoordinates()))
+                .creationDate(routeDto.getCreationDate())
+                .from(LocationEntity.fromDto(routeDto.getFrom()))
+                .to(LocationEntity.fromDto(routeDto.getTo()))
+                .distance(routeDto.getDistance())
+                .build();
+    }
 }

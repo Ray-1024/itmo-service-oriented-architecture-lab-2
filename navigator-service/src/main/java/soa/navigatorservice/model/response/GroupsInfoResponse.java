@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import soa.navigatorservice.model.dto.RouteDto;
+import soa.navigatorservice.model.dto.GroupInfoDto;
 
 import java.util.List;
 
@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Builder
-public class GetRoutesResponse {
-    private List<RouteDto> routes;
+public class GroupsInfoResponse {
+    private List<GroupInfoDto> groups;
 }

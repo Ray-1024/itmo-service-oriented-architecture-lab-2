@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import soa.collectionservice.collectionservice.model.dto.CoordinatesDto;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,11 +18,20 @@ import lombok.NoArgsConstructor;
 public class CoordinatesEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Max(value = 510)
     private long x; //Максимальное значение поля: 510
 
     @NotNull
     private Long y; //Поле не может быть null
+
+    public static CoordinatesEntity fromDto(CoordinatesDto coordinatesDto) {
+        if (coordinatesDto == null) return null;
+        return CoordinatesEntity.builder()
+                .id(null)
+                .x(coordinatesDto.getX())
+                .y(coordinatesDto.getY())
+                .build();
+    }
 }

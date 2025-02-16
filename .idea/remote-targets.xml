@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="s335135@helios.se.ifmo.ru:2222" type="ssh/sftp" uuid="5b65f299-668e-4b81-8565-ae4ea675ecb6">
+        <config>
+          <option name="projectRootOnTarget" value="/home/studs/s335135/navigator-service" />
+          <option name="serverName" value="s335135@helios.se.ifmo.ru:2222 password" />
+          <option name="useRsync" value="true" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="/usr/local/bin/java" />
+            <option name="javaVersionString" value="17.0.12" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

@@ -1,0 +1,89 @@
+package soa.navigatorservice.service;
+
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import soa.navigatorservice.client.RouteCollectionClient;
+import soa.navigatorservice.exception.InvalidInputException;
+import soa.navigatorservice.model.dto.*;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@Service
+@AllArgsConstructor
+public class NavigatorService {
+    private final RouteCollectionClient routeCollectionClient;
+
+    public List<RouteDto> getRoutesWithLocationNamesSorted(String fromLocationName, String toLocationName, String sorting) {
+        final ArrayList<RouteDto> routes = new ArrayList<>();
+        final String filter = "from.name=" + fromLocationName;
+        for (int pageNumber = 1; ; ++pageNumber) {
+            List<RouteDto> page = routeCollectionClient.getAllRoutes(100, pageNumber, sorting, filter);
+
+            if (page.isEmpty()) break;
+
+            routes.addAll(page.stream().filter(routeDto -> Objects.equals(routeDto.getTo().getName(), toLocationName)).collect(Collectors.toList()));
+        }
+        return routes;
+    }
+
+    public RouteDto createRouteByLocationsNames(String fromLocationName,
+                                                String toLocationName,
+                                                float distance,
+                                                CoordinatesDto coordinatesDto,
+                                                String routeName
+    ) {
+        LocationDto from = null;
+        LocationDto to = null;
+
+        for (int pageNumber = 1; ; ++pageNumber) {
+            List<RouteDto> page = routeCollectionClient.getAllRoutes(100, pageNumber, "", "");
+
+            if (page.isEmpty()) break;
+
+            for (RouteDto routeDto : page) {
+                if (Objects.equals(routeDto.getFrom().getName(), fromLocationName)) {
+                    from = routeDto.getFrom();
+                }
+                if (Objects.equals(routeDto.getTo().getName(), toLocationName)) {
+                    to = routeDto.getTo();
+                }
+                if (Objects.nonNull(from) && Objects.nonNull(to)) {
+                    break;
+                }
+            }
+            if (Objects.nonNull(from) && Objects.nonNull(to)) {
+                break;
+            }
+
+        }
+
+        if (Objects.isNull(from) || Objects.isNull(to)) {
+            String paramName = Objects.isNull(from) ? "name-from" : "name-to";
+            throw InvalidInputException.builder()
+                    .invalidParams(List.of(InvalidParamDto.builder()
+                            .paramName(paramName)
+                            .message("Location with this name " + paramName + " not found")
+                            .build()
+                    ))
+                    .error(ErrorDto.builder()
+                            .message("Invalid parameter name: " + paramName)
+                            .time(Instant.now())
+                            .build())
+                    .build();
+        }
+
+        return routeCollectionClient.createRoute(
+                RouteDto.builder()
+                        .name(routeName)
+                        .coordinates(coordinatesDto)
+                        .from(from)
+                        .to(to)
+                        .distance((int) distance)
+                        .build()
+        );
+    }
+}

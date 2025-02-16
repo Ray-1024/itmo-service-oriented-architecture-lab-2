@@ -25,7 +25,7 @@ div.framedBlock { /* SELECTOR_CLASS */
 }
 
 div.errorBlock {
-    color: red;
+    color: red !important;
 }
 
 div.framedBlockHeader {
@@ -36,6 +36,7 @@ div.framedBlockHeader {
 div.framedBlockResult {
 
 }
+
 
 tr:nth-child(odd) {
     color: #379683 !important;
@@ -48,10 +49,16 @@ tr:nth-child(even) {
 table { /* SELECTOR_ELEMENT */
     border-width: 1px;
     border-color: black;
+    border-style: solid;
+    border-radius: 2px;
     color: #05386B !important;
     margin: 20px auto;
 }
 
 td {
     text-align: center;
+    border-width: 1px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 2px;
 }
