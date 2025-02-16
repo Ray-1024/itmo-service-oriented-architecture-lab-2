@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import jakarta.persistence.PersistenceContext;
 import lombok.Getter;
 
 @ApplicationScoped
@@ -12,7 +11,7 @@ import lombok.Getter;
 public class HibernateConfig {
     private static final String persistenceUnit = "studs";
     private final EntityManagerFactory entityManagerFactory;
-    @PersistenceContext
+    //@PersistenceContext(unitName = "studs")
     private final EntityManager entityManager;
 
     public HibernateConfig() {

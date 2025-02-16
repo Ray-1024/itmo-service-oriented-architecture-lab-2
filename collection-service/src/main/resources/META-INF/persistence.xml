@@ -6,22 +6,16 @@
     <persistence-unit name="studs">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <jta-data-source>java:app/jdbc/</jta-data-source>
-
         <class>soa.collectionservice.collectionservice.model.entity.RouteEntity</class>
         <class>soa.collectionservice.collectionservice.model.entity.CoordinatesEntity</class>
         <class>soa.collectionservice.collectionservice.model.entity.LocationEntity</class>
 
         <properties>
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/studs"/>
-            <property name="jakarta.persistence.jdbc.user" value="s335135"/>
-            <property name="jakarta.persistence.jdbc.password" value="r9kNM3hIapwJL2N5"/>
-            <property name="hibernate.connection.driver_class" value="org.postgresql.Driver"/>
-            <property name="hibernate.connection.url" value="jdbc:postgresql://localhost:5432/studs"/>
-            <property name="hibernate.connection.username" value="s335135"/>
-            <property name="hibernate.connection.password" value="r9kNM3hIapwJL2N5"/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:testdb"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
             <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
