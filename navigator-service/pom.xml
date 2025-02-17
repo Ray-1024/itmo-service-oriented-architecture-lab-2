@@ -13,7 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>navigator-service</name>
     <description>navigator-service</description>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <url/>
     <licenses>
         <license/>
@@ -44,7 +44,6 @@
                 </exclusion>
             </exclusions>-->
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

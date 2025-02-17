@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Wildfly [Local]" type="JBossConfiguration" factoryName="Local" APPLICATION_SERVER_NAME="JBoss/WildFly 35.0.0.Final" ALTERNATIVE_JRE_ENABLED="false">
+  <configuration default="false" name="Wildfly [Helios]" type="JBossConfiguration" factoryName="Local" APPLICATION_SERVER_NAME="JBoss/WildFly 35.0.0.Final" ALTERNATIVE_JRE_ENABLED="false">
     <option name="OPEN_IN_BROWSER" value="false" />
     <option name="UPDATING_POLICY" value="restart-server" />
     <deployment>

@@ -285,7 +285,7 @@ const modes = {
         executeRequest: async function () {
             utils.clearErrors();
             utils.resultText('');
-            const url = new URL('https://localhost:22400/api/v1/routes');
+            const url = new URL('http://localhost:22400/api/v1/routes');
             const fields = utils.getFields();
             if (fields.pageSize !== undefined ?? fields.pageNumber !== undefined) {
                 url.searchParams.append('size', `${fields.pageSize}`);
@@ -344,7 +344,7 @@ const modes = {
         executeRequest: async function () {
             utils.clearErrors();
             utils.resultText('');
-            const url = new URL('https://localhost:22400/api/v1/routes');
+            const url = new URL('http://localhost:22400/api/v1/routes');
             const fields = utils.getFields();
             let from = fields.routeFromX === undefined ? '' :
                 `<from>
@@ -400,7 +400,7 @@ const modes = {
             utils.clearErrors();
             utils.resultText('');
             const fields = utils.getFields();
-            const url = new URL(`https://localhost:22400/api/v1/routes/${fields.routeId}`);
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             try {
                 const response = await fetch(url, {
 
@@ -446,7 +446,7 @@ const modes = {
             utils.clearErrors();
             utils.resultText('');
             const fields = utils.getFields();
-            const url = new URL(`https://localhost:22400/api/v1/routes/${fields.routeId}`);
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             let from = fields.routeFromX === undefined ? '' :
                 `<from>
                     <x>${fields.routeFromX}</x>
@@ -503,7 +503,7 @@ const modes = {
             utils.clearErrors();
             utils.resultText('');
             const fields = utils.getFields();
-            const url = new URL(`https://localhost:22400/api/v1/routes/${fields.routeId}`);
+            const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             try {
                 const response = await fetch(url, {
 
@@ -530,7 +530,7 @@ const modes = {
         executeRequest: async function () {
             utils.clearErrors();
             utils.resultText('');
-            const url = new URL('https://localhost:22400/api/v1/routes/name-groups-info');
+            const url = new URL('http://localhost:22400/api/v1/routes/name-groups-info');
             try {
                 const response = await fetch(url, {
 
@@ -565,7 +565,7 @@ const modes = {
             utils.clearErrors();
             utils.resultText('');
             const fields = utils.getFields();
-            const url = new URL('https://localhost:22400/api/v1/routes/with-distance-count');
+            const url = new URL('http://localhost:22400/api/v1/routes/with-distance-count');
             url.searchParams.append('distance', fields.routeDistance);
             try {
                 const response = await fetch(url, {
