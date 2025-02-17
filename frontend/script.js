@@ -74,6 +74,12 @@ const utils = {
         this.hide('routeToZDiv');
         this.hide('routeToNameDiv');
         this.hide('routeDistanceDiv');
+
+
+        document.getElementById('hidePaging').checked = false;
+        document.getElementById('hideSorting').checked = false;
+        document.getElementById('hideFiltering').checked = false;
+        document.getElementById('hideFrom').checked = false;
     },
     clearErrors: function () {
         document.getElementById('errorDiv').innerHTML = '';
@@ -88,6 +94,8 @@ const utils = {
             + '</div>';
     },
     resultRouteTable: function (routes) {
+        console.log(routes);
+
         let txt = '<table>';
         txt += '<tr>';
         txt += '<td>id</td>';
@@ -105,30 +113,32 @@ const utils = {
         txt += '<td>to.name</td>';
         txt += '<td>distance</td>';
         txt += '</tr>';
-        routes.forEach(function (item) {
-            txt += '<tr>';
-            txt += '<td>' + item.id.toString() + '</td>';
-            txt += '<td>' + item.name.toString() + '</td>';
-            txt += '<td>' + item.coordinates.x.toString() + '</td>';
-            txt += '<td>' + item.coordinates.y.toString() + '</td>';
-            txt += '<td>' + item.creationDate.toString() + '</td>';
-            if (item.from != null) {
-                txt += '<td>' + item.from.x.toString() + '</td>';
-                txt += '<td>' + item.from.y.toString() + '</td>';
-                txt += '<td>' + item.from.z.toString() + '</td>';
-                txt += '<td>' + item.from.name.toString() + '</td>';
-            } else {
-                txt += '<td></td><td></td><td></td><td></td>';
-            }
-            txt += '<td>' + item.to.x.toString() + '</td>';
-            txt += '<td>' + item.to.y.toString() + '</td>';
-            txt += '<td>' + item.to.z.toString() + '</td>';
-            txt += '<td>' + item.to.name.toString() + '</td>';
-            txt += '<td>' + item.distance.toString() + '</td>';
-            txt += '</tr>';
-        });
+        if (routes !== undefined && routes !== null) {
+            routes.forEach(function (item) {
+                txt += '<tr>';
+                txt += '<td>' + item.id.toString() + '</td>';
+                txt += '<td>' + item.name.toString() + '</td>';
+                txt += '<td>' + item.coordinates.x.toString() + '</td>';
+                txt += '<td>' + item.coordinates.y.toString() + '</td>';
+                txt += '<td>' + item.creationDate.toString() + '</td>';
+                if (item.from != null) {
+                    txt += '<td>' + item.from.x.toString() + '</td>';
+                    txt += '<td>' + item.from.y.toString() + '</td>';
+                    txt += '<td>' + item.from.z.toString() + '</td>';
+                    txt += '<td>' + item.from.name.toString() + '</td>';
+                } else {
+                    txt += '<td></td><td></td><td></td><td></td>';
+                }
+                txt += '<td>' + item.to.x.toString() + '</td>';
+                txt += '<td>' + item.to.y.toString() + '</td>';
+                txt += '<td>' + item.to.z.toString() + '</td>';
+                txt += '<td>' + item.to.name.toString() + '</td>';
+                txt += '<td>' + item.distance.toString() + '</td>';
+                txt += '</tr>';
+            });
+        }
         txt += '</table>';
-        document.getElementById('resultDiv').innerText = txt;
+        document.getElementById('resultDiv').innerHTML = txt;
     },
     resultGroupsInfo: function (groupsInfo) {
         let txt = '<table>';
@@ -136,14 +146,16 @@ const utils = {
         txt += '<td>name</td>';
         txt += '<td>count</td>';
         txt += '</tr>';
-        groupsInfo.forEach(function (item) {
-            txt += '<tr>';
-            txt += '<td>' + item.name.toString() + '</td>';
-            txt += '<td>' + item.count.toString() + '</td>';
-            txt += '</tr>';
-        });
+        if (groupsInfo !== undefined && groupsInfo !== null) {
+            groupsInfo.forEach(function (item) {
+                txt += '<tr>';
+                txt += '<td>' + item.name.toString() + '</td>';
+                txt += '<td>' + item.count.toString() + '</td>';
+                txt += '</tr>';
+            });
+        }
         txt += '</table>';
-        document.getElementById('resultDiv').innerText = txt;
+        document.getElementById('resultDiv').innerHTML = txt;
     },
     resultText: function (text) {
         document.getElementById('resultDiv').innerHTML = text;
@@ -158,18 +170,24 @@ const utils = {
     },
     handleNon200Response: function (response, data) {
         try {
+            utils.clearErrors();
             const error = this.parseXml(data);
-            if (response.status === 400 || response.status === 422) {
+            if (response.status === 200 || response.status === 204) {
+            } else if (response.status === 400 || response.status === 422) {
                 this.error('Неверно заполнено одно из полей');
+                this.resultText('');
                 this.handleInvalidParamsResponse(error);
             } else if (response.status === 500) {
                 this.error('Внутренняя ошибка сервера');
+                this.resultText('');
                 this.handleErrorResponse(error);
             } else if (response.status === 404) {
                 this.error('Произошла ошибка');
+                this.resultText('');
                 this.handleErrorResponse(error);
             } else {
-                this.error('Неизвестная неизвестная ошибка');
+                this.error(`Неожиданный код ответа ${response.status}`);
+                this.resultText('');
                 console.log(response);
                 console.log(error);
             }
@@ -178,6 +196,7 @@ const utils = {
         }
     },
     parseXml: function (xmlString) {
+        xmlString.toString().replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '');
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
@@ -263,12 +282,14 @@ const modes = {
             utils.show('filteringComparatorDiv');
             utils.show('filteringValueDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const url = new URL('http://localhost:22400/api/v1/routes');
             const fields = utils.getFields();
             if (fields.pageSize !== undefined ?? fields.pageNumber !== undefined) {
-                url.searchParams.append('pageSize', `${fields.pageSize}`);
-                url.searchParams.append('pageNumber', `${fields.pageNumber}`);
+                url.searchParams.append('size', `${fields.pageSize}`);
+                url.searchParams.append('page', `${fields.pageNumber}`);
             }
             if (fields.sorting !== undefined) {
                 url.searchParams.append('sort', `${fields.sorting}`);
@@ -277,21 +298,26 @@ const modes = {
                 url.searchParams.append('filter', `${fields.filtering}`);
             }
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml'
                     },
                 });
-                const data = response.text();
+                const data = await response.text();
+                console.log(data);
                 if (response.status === 200) {
                     const routesResponse = utils.parseXml(data);
-                    utils.resultRouteTable(routesResponse.routes);
+                    console.log(routesResponse);
+                    if (Array.isArray(routesResponse.routes.route))
+                        utils.resultRouteTable(routesResponse.routes.route);
+                    else
+                        utils.resultRouteTable([routesResponse.routes.route]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -315,7 +341,9 @@ const modes = {
             utils.show('routeToNameDiv');
             utils.show('routeDistanceDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const url = new URL('http://localhost:22400/api/v1/routes');
             const fields = utils.getFields();
             let from = fields.routeFromX === undefined ? '' :
@@ -326,7 +354,8 @@ const modes = {
                     <name>${fields.routeFromName}</name>
                 </from>`;
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/xml',
@@ -350,14 +379,13 @@ const modes = {
                     </route>
                     `
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const route = utils.parseXml(data);
                     utils.resultRouteTable([route]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -368,25 +396,27 @@ const modes = {
             utils.show('routeDiv');
             utils.show('routeIdDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
             const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml',
                     },
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const route = utils.parseXml(data);
                     utils.resultRouteTable([route]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -412,7 +442,9 @@ const modes = {
             utils.show('routeToNameDiv');
             utils.show('routeDistanceDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
             const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             let from = fields.routeFromX === undefined ? '' :
@@ -423,7 +455,8 @@ const modes = {
                     <name>${fields.routeFromName}</name>
                 </from>`;
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/xml',
@@ -449,14 +482,13 @@ const modes = {
                     </route>
                     `
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const route = utils.parseXml(data);
                     utils.resultRouteTable([route]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -467,24 +499,26 @@ const modes = {
             utils.show('routeDiv');
             utils.show('routeIdDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
             const url = new URL(`http://localhost:22400/api/v1/routes/${fields.routeId}`);
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml',
                     },
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 204) {
                     utils.resultText('Маршрут успешно удален');
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -493,24 +527,30 @@ const modes = {
         activate: function () {
             utils.header('Получение информации о группах');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const url = new URL('http://localhost:22400/api/v1/routes/name-groups-info');
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml'
                     }
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const groupsInfo = utils.parseXml(data);
-                    utils.resultGroupsInfo(groupsInfo);
+                    console.log(groupsInfo);
+                    if (Array.isArray(groupsInfo.group))
+                        utils.resultGroupsInfo(groupsInfo.group);
+                    else
+                        utils.resultGroupsInfo([groupsInfo.group]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -521,26 +561,29 @@ const modes = {
             utils.show('routeDiv');
             utils.show('routeDistanceDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
             const url = new URL('http://localhost:22400/api/v1/routes/with-distance-count');
             url.searchParams.append('distance', fields.routeDistance);
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml'
                     }
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
-                    const count = utils.parseXml(data);
+                    const count = utils.toInt(utils.parseXml(data).count);
+                    console.log(count);
                     utils.resultText(`Количество маршрутов с длиной ${fields.routeDistance} : ${count}`);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -556,25 +599,32 @@ const modes = {
             utils.show('routeFromNameDiv');
             utils.show('routeToNameDiv');
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
             const url = new URL(`http://localhost:22401/api/v1/navigator/routes/${fields.routeFromName}/${fields.routeToName}/${fields.sorting}`);
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/xml',
                         'Accept': 'application/xml'
                     }
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const routes = utils.parseXml(data);
-                    utils.resultRouteTable(routes);
+                    console.log(routes);
+                    if (routes === undefined || routes.routes === undefined || routes.routes.routes === undefined)
+                        return;
+                    if (Array.isArray(routes.routes.routes))
+                        utils.resultRouteTable(routes.routes.routes);
+                    else
+                        utils.resultRouteTable([routes.routes.routes]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -592,11 +642,14 @@ const modes = {
             utils.show('routeDistanceDiv');
 
         },
-        executeRequest: function () {
+        executeRequest: async function () {
+            utils.clearErrors();
+            utils.resultText('');
             const fields = utils.getFields();
-            const url = new URL(`http://localhost:22401/api/v1/navigator/routes/${fields.routeFromName}/${fields.routeToName}/${fields.routeDistance}`);
+            const url = new URL(`http://localhost:22401/api/v1/navigator/route/add/${fields.routeFromName}/${fields.routeToName}/${fields.routeDistance}`);
             try {
-                const response = fetch(url, {
+                const response = await fetch(url, {
+
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/xml',
@@ -612,14 +665,13 @@ const modes = {
                     </request>
                     `
                 });
-                const data = response.text();
+                const data = await response.text();
                 if (response.status === 200) {
                     const route = utils.parseXml(data);
                     utils.resultRouteTable([route]);
                 }
                 utils.handleNon200Response(response, data);
             } catch (error) {
-                utils.error('Неизвестная ошибка');
                 console.log(error);
             }
         }
@@ -631,6 +683,7 @@ let currentMode = modes.getRoutes;
 function applyMode(mode) {
     utils.hideAllFields();
     utils.clearErrors();
+    utils.resultText('');
     currentMode = mode;
     currentMode.activate();
 }

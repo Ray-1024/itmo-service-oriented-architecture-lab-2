@@ -11,11 +11,9 @@ import soa.navigatorservice.exception.InvalidQueryParamException;
 import soa.navigatorservice.exception.OtherErrorException;
 import soa.navigatorservice.model.dto.ErrorDto;
 import soa.navigatorservice.model.dto.RouteDto;
-import soa.navigatorservice.model.request.RouteRequest;
 import soa.navigatorservice.model.response.ErrorResponse;
 import soa.navigatorservice.model.response.InvalidParamsResponse;
 import soa.navigatorservice.model.response.RouteCollectionResponse;
-import soa.navigatorservice.model.response.RouteResponse;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,9 +29,9 @@ public class RouteCollectionClient {
         try {
             RouteCollectionResponse response = restTemplate.getForObject(
                     COLLECTION_SERVICE_BASE_URL +
-                            "?pageSize=" +
+                            "?size=" +
                             pageSize +
-                            "&pageNumber=" +
+                            "&page=" +
                             pageNumber +
                             "&sort=" +
                             sort +
@@ -109,7 +107,7 @@ public class RouteCollectionClient {
         } catch (Exception e) {
             throw CollectionServiceAccessException.builder()
                     .error(ErrorDto.builder()
-                            .message("Can't call other service to get routes")
+                            .message("Can't call other service to get routes" + e.getMessage())
                             .time(Instant.now())
                             .build())
                     .build();
@@ -119,14 +117,12 @@ public class RouteCollectionClient {
     public RouteDto createRoute(RouteDto routeDto) {
         final RestTemplate restTemplate = new RestTemplate();
         try {
-            RouteResponse response = restTemplate.postForObject(
+            RouteDto response = restTemplate.postForObject(
                     COLLECTION_SERVICE_BASE_URL,
-                    RouteRequest.builder()
-                            .route(routeDto)
-                            .build(),
-                    RouteResponse.class
+                    routeDto,
+                    RouteDto.class
             );
-            return response.getRoute();
+            return response;
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
                 InvalidParamsResponse response = e.getResponseBodyAs(InvalidParamsResponse.class);

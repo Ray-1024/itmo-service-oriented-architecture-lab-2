@@ -4,9 +4,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import soa.navigatorservice.model.dto.RouteDto;
 import soa.navigatorservice.model.request.NavigatorCreateRouteRequest;
 import soa.navigatorservice.model.response.RouteCollectionResponse;
-import soa.navigatorservice.model.response.RouteResponse;
 import soa.navigatorservice.service.NavigatorService;
 
 @AllArgsConstructor
@@ -29,21 +29,18 @@ public class NavigatorController {
     @PostMapping(value = "/api/v1/navigator/route/add/{name-from}/{name-to}/{distance}",
             consumes = MediaType.APPLICATION_XML_VALUE,
             produces = MediaType.APPLICATION_XML_VALUE)
-    public RouteResponse addRoute(
+    public RouteDto addRoute(
             @PathVariable("name-from") String nameFrom,
             @PathVariable("name-to") String nameTo,
             @PathVariable float distance,
             @RequestBody NavigatorCreateRouteRequest navigatorCreateRouteRequest
     ) {
-        return RouteResponse.builder()
-                .route(navigatorService.createRouteByLocationsNames(
-                                nameFrom,
-                                nameTo,
-                                distance,
-                                navigatorCreateRouteRequest.getCoordinates(),
-                                navigatorCreateRouteRequest.getName()
-                        )
-                )
-                .build();
+        return navigatorService.createRouteByLocationsNames(
+                nameFrom,
+                nameTo,
+                distance,
+                navigatorCreateRouteRequest.getCoordinates(),
+                navigatorCreateRouteRequest.getName()
+        );
     }
 }

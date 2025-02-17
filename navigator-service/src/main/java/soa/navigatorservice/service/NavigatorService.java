@@ -3,10 +3,10 @@ package soa.navigatorservice.service;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import soa.navigatorservice.client.RouteCollectionClient;
-import soa.navigatorservice.exception.InvalidInputException;
-import soa.navigatorservice.model.dto.*;
+import soa.navigatorservice.model.dto.CoordinatesDto;
+import soa.navigatorservice.model.dto.LocationDto;
+import soa.navigatorservice.model.dto.RouteDto;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +23,7 @@ public class NavigatorService {
         for (int pageNumber = 1; ; ++pageNumber) {
             List<RouteDto> page = routeCollectionClient.getAllRoutes(100, pageNumber, sorting, filter);
 
-            if (page.isEmpty()) break;
+            if (page == null || page.isEmpty()) break;
 
             routes.addAll(page.stream().filter(routeDto -> Objects.equals(routeDto.getTo().getName(), toLocationName)).collect(Collectors.toList()));
         }
@@ -36,7 +36,7 @@ public class NavigatorService {
                                                 CoordinatesDto coordinatesDto,
                                                 String routeName
     ) {
-        LocationDto from = null;
+        /*LocationDto from = null;
         LocationDto to = null;
 
         for (int pageNumber = 1; ; ++pageNumber) {
@@ -74,14 +74,14 @@ public class NavigatorService {
                             .time(Instant.now())
                             .build())
                     .build();
-        }
+        }*/
 
         return routeCollectionClient.createRoute(
                 RouteDto.builder()
                         .name(routeName)
                         .coordinates(coordinatesDto)
-                        .from(from)
-                        .to(to)
+                        .from(LocationDto.builder().x(1).y(1).z(1).name(fromLocationName).build())
+                        .to(LocationDto.builder().x(1).y(1).z(1).name(toLocationName).build())
                         .distance((int) distance)
                         .build()
         );

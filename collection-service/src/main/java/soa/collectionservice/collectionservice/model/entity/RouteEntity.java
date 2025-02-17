@@ -29,17 +29,17 @@ public class RouteEntity {
     private String name; //Поле не может быть null, Строка не может быть пустой
 
     @NotNull
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private CoordinatesEntity coordinates; //Поле не может быть null
 
     @NotNull
     private Date creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private LocationEntity from; //Поле может быть null
 
     @NotNull
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private LocationEntity to; //Поле не может быть null
 
     @Min(value = 2)

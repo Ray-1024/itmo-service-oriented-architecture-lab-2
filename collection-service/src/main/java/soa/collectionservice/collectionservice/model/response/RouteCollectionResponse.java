@@ -1,6 +1,6 @@
 package soa.collectionservice.collectionservice.model.response;
 
-import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +14,11 @@ import java.util.List;
 @Data
 @Builder
 @XmlRootElement(name = "response")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class RouteCollectionResponse {
+    @XmlElementWrapper(name = "routes")
+    @XmlElement(name = "route")
     private List<RouteDto> routes;
+    @XmlElement
     private int currentPageNumber;
 }

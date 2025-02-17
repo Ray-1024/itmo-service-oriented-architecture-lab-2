@@ -1,5 +1,8 @@
 package soa.collectionservice.collectionservice.model.response;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +16,10 @@ import java.time.Instant;
 @Data
 @Builder
 @XmlRootElement(name = "error")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ErrorResponse {
+    @XmlElement
     private String message;
+    @XmlElement
     private Instant time;
 }

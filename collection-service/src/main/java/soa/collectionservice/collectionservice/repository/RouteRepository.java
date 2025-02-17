@@ -2,13 +2,13 @@ package soa.collectionservice.collectionservice.repository;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
-import soa.collectionservice.collectionservice.config.HibernateConfig;
+import jakarta.transaction.Transactional;
 import soa.collectionservice.collectionservice.exception.InternalServerException;
 import soa.collectionservice.collectionservice.exception.InvalidQueryParamException;
 import soa.collectionservice.collectionservice.model.dto.ErrorDto;
@@ -18,16 +18,17 @@ import soa.collectionservice.collectionservice.model.dto.RouteDto;
 import soa.collectionservice.collectionservice.model.entity.RouteEntity;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class RouteRepository {
-    @Inject
-    private HibernateConfig hibernateConfig;
+    @PersistenceContext(unitName = "studs")
+    private EntityManager entityManager;
 
+    @Transactional
     public List<RouteEntity> getAll(int page, int size, String sortBy, boolean ascending, String filterBy, String filterPredicate, String filterValue) {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
         try {
             CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
             CriteriaQuery<RouteEntity> criteriaQuery = criteriaBuilder.createQuery(RouteEntity.class);
@@ -81,10 +82,27 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public RouteEntity getById(Long id) {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
         try {
-            return entityManager.find(RouteEntity.class, id);
+            RouteEntity entity = entityManager.find(RouteEntity.class, id);
+            if (entity == null) {
+                throw InvalidQueryParamException.builder()
+                        .invalidParams(List.of(
+                                InvalidParamDto.builder()
+                                        .paramName("id")
+                                        .message("Route with this id doesn't exists")
+                                        .build()
+                        ))
+                        .error(ErrorDto.builder()
+                                .message("Route with id=" + id + "doesn't exists")
+                                .time(Instant.now())
+                                .build())
+                        .build();
+            }
+            return entity;
+        } catch (InvalidQueryParamException e) {
+            throw e;
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
@@ -95,11 +113,24 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public RouteEntity create(RouteDto route) {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
         try {
-            entityManager.persist(RouteEntity.fromDto(route));
-            return getById(route.getId());
+            route.setId(null);
+            route.setCreationDate(new Date());
+            RouteEntity entity = RouteEntity.fromDto(route);
+            entity.getCoordinates().setId(null);
+            entity.getTo().setId(null);
+            if (entity.getFrom() != null) {
+                entity.getFrom().setId(null);
+            }
+            entityManager.persist(entity.getCoordinates());
+            if (entity.getTo() != null) {
+                entityManager.persist(entity.getFrom());
+            }
+            entityManager.persist(entity.getTo());
+            entityManager.persist(entity);
+            return getById(entity.getId());
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
@@ -110,11 +141,13 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public RouteEntity update(RouteDto route) {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
+
         try {
-            entityManager.persist(RouteEntity.fromDto(route));
-            return getById(route.getId());
+            RouteEntity entity = RouteEntity.fromDto(route);
+            entityManager.merge(entity);
+            return entity;
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
@@ -125,10 +158,11 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public void deleteById(long routeId) {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
+
         try {
-            entityManager.detach(getById(routeId));
+            entityManager.remove(getById(routeId));
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
@@ -139,8 +173,8 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public List<GroupInfoDto> getGroupsInfo() {
-        EntityManager entityManager = hibernateConfig.getEntityManager();
         try {
             CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
             CriteriaQuery<Object[]> criteriaQuery = criteriaBuilder.createQuery(Object[].class);
@@ -154,7 +188,7 @@ public class RouteRepository {
             return entityManager.createQuery(criteriaQuery).getResultList().stream().map(objects ->
                     GroupInfoDto.builder()
                             .name((String) objects[0])
-                            .count((Integer) objects[1])
+                            .count((int) (((Long) objects[1]).longValue()))
                             .build()
             ).collect(Collectors.toList());
         } catch (Exception e) {
@@ -167,6 +201,7 @@ public class RouteRepository {
         }
     }
 
+    @Transactional
     public long getEqualDistanceRoutesCount(int distance) {
         if (distance <= 1) throw InvalidQueryParamException.builder()
                 .invalidParams(List.of(InvalidParamDto.builder()
@@ -179,7 +214,7 @@ public class RouteRepository {
                         .build())
                 .build();
 
-        EntityManager entityManager = hibernateConfig.getEntityManager();
+
         try {
             CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
             CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
@@ -189,6 +224,8 @@ public class RouteRepository {
                     .where(criteriaBuilder.equal(root.get("distance"), distance));
 
             return entityManager.createQuery(criteriaQuery).getResultList().get(0);
+        } catch (InvalidQueryParamException e) {
+            throw e;
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()

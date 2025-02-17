@@ -1,5 +1,9 @@
 package soa.collectionservice.collectionservice.model.dto;
 
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,8 +14,12 @@ import soa.collectionservice.collectionservice.model.entity.CoordinatesEntity;
 @NoArgsConstructor
 @Data
 @Builder
+@XmlRootElement(name = "coordinates")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class CoordinatesDto {
+    @XmlElement(required = true)
     private long x; //Максимальное значение поля: 510
+    @XmlElement(required = true)
     private Long y; //Поле не может быть null
 
     public static CoordinatesDto fromEntity(CoordinatesEntity coordinatesEntity) {
