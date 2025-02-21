@@ -26,6 +26,8 @@ public class RouteEntity {
 
     @NotNull
     @NotBlank
+    @Lob
+    @Column(columnDefinition = "CLOB")
     private String name; //Поле не может быть null, Строка не может быть пустой
 
     @NotNull
@@ -33,7 +35,7 @@ public class RouteEntity {
     private CoordinatesEntity coordinates; //Поле не может быть null
 
     @NotNull
-    private Date creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
+    private String creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private LocationEntity from; //Поле может быть null

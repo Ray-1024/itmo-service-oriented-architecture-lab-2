@@ -21,7 +21,7 @@ public class RouteDto {
 
     private CoordinatesDto coordinates; //Поле не может быть null
 
-    private Date creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
+    private String creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
 
     private LocationDto from; //Поле может быть null
 

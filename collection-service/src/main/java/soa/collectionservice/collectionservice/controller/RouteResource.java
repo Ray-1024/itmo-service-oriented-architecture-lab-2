@@ -13,7 +13,8 @@ import soa.collectionservice.collectionservice.model.response.GroupsInfoResponse
 import soa.collectionservice.collectionservice.model.response.RouteCollectionResponse;
 import soa.collectionservice.collectionservice.service.RouteService;
 
-import java.time.Instant;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 @Path("/routes")
@@ -59,7 +60,7 @@ public class RouteResource {
                                 .build()
                 ))
                 .error(ErrorDto.builder().message("Different id")
-                        .time(Instant.now())
+                        .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                         .build())
                 .build();
         return Response.ok(routeService.updateRoute(routeDto)).build();

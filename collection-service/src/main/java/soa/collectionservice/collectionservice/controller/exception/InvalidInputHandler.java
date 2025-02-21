@@ -14,7 +14,7 @@ public class InvalidInputHandler implements ExceptionMapper<InvalidInputExceptio
 
     @Override
     public Response toResponse(InvalidInputException e) {
-        return Response.status(Response.Status.fromStatusCode(422))
+        return Response.status(422, "InvalidInput")
                 .entity(InvalidParamsResponse.builder()
                         .invalidParams(e.getInvalidParams())
                         .error(e.getError())

@@ -21,5 +21,5 @@ public class ErrorResponse {
     @XmlElement
     private String message;
     @XmlElement
-    private Instant time;
+    private String time;
 }

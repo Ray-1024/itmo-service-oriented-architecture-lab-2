@@ -1,5 +1,6 @@
 package soa.navigatorservice.client;
 
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -15,17 +16,19 @@ import soa.navigatorservice.model.response.ErrorResponse;
 import soa.navigatorservice.model.response.InvalidParamsResponse;
 import soa.navigatorservice.model.response.RouteCollectionResponse;
 
-import java.time.Instant;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
 @Component
+@AllArgsConstructor
 public class RouteCollectionClient {
-    private final static String COLLECTION_SERVICE_BASE_URL = "http://localhost:22400/api/v1/routes";
+    private final static String COLLECTION_SERVICE_BASE_URL = "http://localhost:22398/api/v1/routes";
 
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public List<RouteDto> getAllRoutes(int pageSize, int pageNumber, String sort, String filter) {
-        final RestTemplate restTemplate = new RestTemplate();
         try {
             RouteCollectionResponse response = restTemplate.getForObject(
                     COLLECTION_SERVICE_BASE_URL +
@@ -47,7 +50,7 @@ public class RouteCollectionClient {
                     throw CollectionServiceAccessException.builder()
                             .error(ErrorDto.builder()
                                     .message("Broken collection service response format")
-                                    .time(Instant.now())
+                                    .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                     .build())
                             .build();
                 }
@@ -61,7 +64,7 @@ public class RouteCollectionClient {
                     throw CollectionServiceAccessException.builder()
                             .error(ErrorDto.builder()
                                     .message("Broken collection service response format")
-                                    .time(Instant.now())
+                                    .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                     .build())
                             .build();
                 }
@@ -75,7 +78,7 @@ public class RouteCollectionClient {
                 throw CollectionServiceAccessException.builder()
                         .error(ErrorDto.builder()
                                 .message("Unknown response status: " + e.getStatusCode())
-                                .time(Instant.now())
+                                .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                 .build())
                         .build();
             }
@@ -86,7 +89,7 @@ public class RouteCollectionClient {
                     throw CollectionServiceAccessException.builder()
                             .error(ErrorDto.builder()
                                     .message("Broken collection service response format")
-                                    .time(Instant.now())
+                                    .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                     .build())
                             .build();
                 }
@@ -100,7 +103,7 @@ public class RouteCollectionClient {
                 throw CollectionServiceAccessException.builder()
                         .error(ErrorDto.builder()
                                 .message("Unknown response status: " + e.getStatusCode())
-                                .time(Instant.now())
+                                .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                 .build())
                         .build();
             }
@@ -108,14 +111,13 @@ public class RouteCollectionClient {
             throw CollectionServiceAccessException.builder()
                     .error(ErrorDto.builder()
                             .message("Can't call other service to get routes" + e.getMessage())
-                            .time(Instant.now())
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
     }
 
     public RouteDto createRoute(RouteDto routeDto) {
-        final RestTemplate restTemplate = new RestTemplate();
         try {
             RouteDto response = restTemplate.postForObject(
                     COLLECTION_SERVICE_BASE_URL,
@@ -130,7 +132,7 @@ public class RouteCollectionClient {
                     throw CollectionServiceAccessException.builder()
                             .error(ErrorDto.builder()
                                     .message("Broken collection service response format")
-                                    .time(Instant.now())
+                                    .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                     .build())
                             .build();
                 }
@@ -142,7 +144,7 @@ public class RouteCollectionClient {
                 throw CollectionServiceAccessException.builder()
                         .error(ErrorDto.builder()
                                 .message("Unknown response status: " + e.getStatusCode())
-                                .time(Instant.now())
+                                .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                 .build())
                         .build();
             }
@@ -153,7 +155,7 @@ public class RouteCollectionClient {
                     throw CollectionServiceAccessException.builder()
                             .error(ErrorDto.builder()
                                     .message("Broken collection service response format")
-                                    .time(Instant.now())
+                                    .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                     .build())
                             .build();
                 }
@@ -167,7 +169,7 @@ public class RouteCollectionClient {
                 throw CollectionServiceAccessException.builder()
                         .error(ErrorDto.builder()
                                 .message("Unknown response status: " + e.getStatusCode())
-                                .time(Instant.now())
+                                .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                 .build())
                         .build();
             }
@@ -175,7 +177,7 @@ public class RouteCollectionClient {
             throw CollectionServiceAccessException.builder()
                     .error(ErrorDto.builder()
                             .message("Can't call other service to get routes")
-                            .time(Instant.now())
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }

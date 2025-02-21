@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -16,5 +14,5 @@ import java.time.Instant;
 @JacksonXmlRootElement(localName = "error")
 public class ErrorResponse {
     private String message;
-    private Instant time;
+    private String time;
 }

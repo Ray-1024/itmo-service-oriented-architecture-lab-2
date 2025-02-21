@@ -5,9 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import soa.collectionservice.collectionservice.exception.InternalServerException;
 import soa.collectionservice.collectionservice.exception.InvalidQueryParamException;
@@ -17,9 +15,10 @@ import soa.collectionservice.collectionservice.model.dto.InvalidParamDto;
 import soa.collectionservice.collectionservice.model.dto.RouteDto;
 import soa.collectionservice.collectionservice.model.entity.RouteEntity;
 
-import java.time.Instant;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -28,42 +27,39 @@ public class RouteRepository {
     private EntityManager entityManager;
 
     @Transactional
-    public List<RouteEntity> getAll(int page, int size, String sortBy, boolean ascending, String filterBy, String filterPredicate, String filterValue) {
+    public List<RouteEntity> getAll(int page, int size, List<Map.Entry<String, Boolean>> sorting, List<Map.Entry<String, Map.Entry<String, String>>> filtering) {
         try {
             CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
             CriteriaQuery<RouteEntity> criteriaQuery = criteriaBuilder.createQuery(RouteEntity.class);
             Root<RouteEntity> root = criteriaQuery.from(RouteEntity.class);
             criteriaQuery.select(root);
 
-            if (sortBy != null && !sortBy.isEmpty()) {
-                String[] fields = sortBy.split("\\.");
-                criteriaQuery.orderBy(ascending ?
-                        criteriaBuilder.asc(fields.length == 1 ? root.get(sortBy) : root.get(fields[0]).get(fields[1])) :
-                        criteriaBuilder.desc(fields.length == 1 ? root.get(sortBy) : root.get(fields[0]).get(fields[1]))
-                );
+            if (!sorting.isEmpty()) {
+                criteriaQuery.orderBy(sorting.stream().map(srt -> {
+                            String[] fields = srt.getKey().split("\\.");
+                            return srt.getValue() ?
+                                    criteriaBuilder.asc(fields.length == 1 ? root.get(srt.getKey()) : root.get(fields[0]).get(fields[1])) :
+                                    criteriaBuilder.desc(fields.length == 1 ? root.get(srt.getKey()) : root.get(fields[0]).get(fields[1]));
+                        }
+                ).toList());
             }
-            if (filterBy != null && !filterBy.isEmpty()) {
-                String[] fields = filterBy.split("\\.");
-                switch (filterPredicate) {
-                    case "=":
-                        criteriaQuery.where(criteriaBuilder.equal(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                    case "!=":
-                        criteriaQuery.where(criteriaBuilder.notEqual(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                    case "<=":
-                        criteriaQuery.where(criteriaBuilder.lessThanOrEqualTo(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                    case ">=":
-                        criteriaQuery.where(criteriaBuilder.greaterThanOrEqualTo(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                    case "<":
-                        criteriaQuery.where(criteriaBuilder.lessThan(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                    case ">":
-                        criteriaQuery.where(criteriaBuilder.greaterThan(fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]), filterValue));
-                        break;
-                }
+            if (!filtering.isEmpty()) {
+                criteriaQuery.where(filtering.stream().map(fltr -> {
+                            String[] fields = fltr.getKey().split("\\.");
+                            String filterBy = fltr.getKey();
+                            String filterValue = fltr.getValue().getValue();
+                            Path<String> elem = fields.length == 1 ? root.get(filterBy) : root.get(fields[0]).get(fields[1]);
+                            return switch (fltr.getValue().getKey()) {
+                                case "=" -> criteriaBuilder.equal(elem, filterValue);
+                                case "!=" -> criteriaBuilder.notEqual(elem, filterValue);
+                                case "<=" -> criteriaBuilder.lessThanOrEqualTo(elem, filterValue);
+                                case ">=" -> criteriaBuilder.greaterThanOrEqualTo(elem, filterValue);
+                                case "<" -> criteriaBuilder.lessThan(elem, filterValue);
+                                case ">" -> criteriaBuilder.greaterThan(elem, filterValue);
+                                default -> null;
+                            };
+                        }).toArray(Predicate[]::new)
+                );
             }
 
             TypedQuery<RouteEntity> query = entityManager.createQuery(criteriaQuery);
@@ -75,8 +71,8 @@ public class RouteRepository {
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Can't find routes with this paging, sorting and filtering parameters")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -96,7 +92,7 @@ public class RouteRepository {
                         ))
                         .error(ErrorDto.builder()
                                 .message("Route with id=" + id + "doesn't exists")
-                                .time(Instant.now())
+                                .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                                 .build())
                         .build();
             }
@@ -106,8 +102,8 @@ public class RouteRepository {
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with searching route by id")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -117,25 +113,24 @@ public class RouteRepository {
     public RouteEntity create(RouteDto route) {
         try {
             route.setId(null);
-            route.setCreationDate(new Date());
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            route.setCreationDate(format.format(new Date()));
             RouteEntity entity = RouteEntity.fromDto(route);
             entity.getCoordinates().setId(null);
             entity.getTo().setId(null);
             if (entity.getFrom() != null) {
                 entity.getFrom().setId(null);
-            }
-            entityManager.persist(entity.getCoordinates());
-            if (entity.getTo() != null) {
                 entityManager.persist(entity.getFrom());
             }
+            entityManager.persist(entity.getCoordinates());
             entityManager.persist(entity.getTo());
             entityManager.persist(entity);
             return getById(entity.getId());
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with creating route")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -143,16 +138,16 @@ public class RouteRepository {
 
     @Transactional
     public RouteEntity update(RouteDto route) {
-
         try {
             RouteEntity entity = RouteEntity.fromDto(route);
+            getById(route.getId());
             entityManager.merge(entity);
             return entity;
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with updating route by id")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -166,8 +161,8 @@ public class RouteRepository {
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with deleting route by id")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -194,8 +189,8 @@ public class RouteRepository {
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with searching info about groups")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }
@@ -210,7 +205,7 @@ public class RouteRepository {
                         .build()))
                 .error(ErrorDto.builder()
                         .message("Invalid query param distance")
-                        .time(Instant.now())
+                        .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                         .build())
                 .build();
 
@@ -229,8 +224,8 @@ public class RouteRepository {
         } catch (Exception e) {
             throw InternalServerException.builder()
                     .error(ErrorDto.builder()
-                            .message(e.getMessage())
-                            .time(Instant.now())
+                            .message("Some problem with searching routes count by distance")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
                             .build())
                     .build();
         }

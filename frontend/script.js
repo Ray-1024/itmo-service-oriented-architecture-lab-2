@@ -47,12 +47,10 @@ const utils = {
         this.hide('pageSizeDiv');
 
         this.hide('sortingDiv');
-        this.hide('hideSortingDiv');
         this.hide('sortingFieldDiv');
         this.hide('sortingOrderDiv');
 
         this.hide('filteringDiv');
-        this.hide('hideFilteringDiv');
         this.hide('filteringFieldDiv');
         this.hide('filteringComparatorDiv');
         this.hide('filteringValueDiv');
@@ -77,8 +75,6 @@ const utils = {
 
 
         document.getElementById('hidePaging').checked = false;
-        document.getElementById('hideSorting').checked = false;
-        document.getElementById('hideFiltering').checked = false;
         document.getElementById('hideFrom').checked = false;
     },
     clearErrors: function () {
@@ -95,6 +91,10 @@ const utils = {
     },
     resultRouteTable: function (routes) {
         console.log(routes);
+
+        function clippedCell(text, maxLength) {
+            return text.length <= maxLength ? `<td>${text}</td>` : `<td>${text.substring(0, maxLength - 3)}...</td>`;
+        }
 
         let txt = '<table>';
         txt += '<tr>';
@@ -116,24 +116,24 @@ const utils = {
         if (routes !== undefined && routes !== null) {
             routes.forEach(function (item) {
                 txt += '<tr>';
-                txt += '<td>' + item.id.toString() + '</td>';
-                txt += '<td>' + item.name.toString() + '</td>';
-                txt += '<td>' + item.coordinates.x.toString() + '</td>';
-                txt += '<td>' + item.coordinates.y.toString() + '</td>';
-                txt += '<td>' + item.creationDate.toString() + '</td>';
+                txt += clippedCell(item.id.toString(), 8);
+                txt += clippedCell(item.name.toString(), 8);
+                txt += clippedCell(item.coordinates.x.toString(), 8);
+                txt += clippedCell(item.coordinates.y.toString(), 8);
+                txt += clippedCell(item.creationDate.toString(), 23);
                 if (item.from != null) {
-                    txt += '<td>' + item.from.x.toString() + '</td>';
-                    txt += '<td>' + item.from.y.toString() + '</td>';
-                    txt += '<td>' + item.from.z.toString() + '</td>';
-                    txt += '<td>' + item.from.name.toString() + '</td>';
+                    txt += clippedCell(item.from.x.toString(), 8);
+                    txt += clippedCell(item.from.y.toString(), 8);
+                    txt += clippedCell(item.from.z.toString(), 8);
+                    txt += clippedCell(item.from.name.toString(), 8);
                 } else {
                     txt += '<td></td><td></td><td></td><td></td>';
                 }
-                txt += '<td>' + item.to.x.toString() + '</td>';
-                txt += '<td>' + item.to.y.toString() + '</td>';
-                txt += '<td>' + item.to.z.toString() + '</td>';
-                txt += '<td>' + item.to.name.toString() + '</td>';
-                txt += '<td>' + item.distance.toString() + '</td>';
+                txt += clippedCell(item.to.x.toString(), 8);
+                txt += clippedCell(item.to.y.toString(), 8);
+                txt += clippedCell(item.to.z.toString(), 8);
+                txt += clippedCell(item.to.name.toString(), 8);
+                txt += clippedCell(item.distance.toString(), 8);
                 txt += '</tr>';
             });
         }
@@ -141,6 +141,10 @@ const utils = {
         document.getElementById('resultDiv').innerHTML = txt;
     },
     resultGroupsInfo: function (groupsInfo) {
+        function clippedCell(text, maxLength) {
+            return text.length <= maxLength ? `<td>${text}</td>` : `<td>${text.substring(0, maxLength - 3)}...</td>`;
+        }
+
         let txt = '<table>';
         txt += '<tr>';
         txt += '<td>name</td>';
@@ -149,8 +153,8 @@ const utils = {
         if (groupsInfo !== undefined && groupsInfo !== null) {
             groupsInfo.forEach(function (item) {
                 txt += '<tr>';
-                txt += '<td>' + item.name.toString() + '</td>';
-                txt += '<td>' + item.count.toString() + '</td>';
+                txt += clippedCell(item.name.toString(), 8);
+                txt += clippedCell(item.count.toString(), 8);
                 txt += '</tr>';
             });
         }
@@ -232,21 +236,22 @@ const utils = {
             fields.pageNumber = utils.asInt('pageNumber');
         }
         if (utils.isVisible('sortingDiv') && utils.isVisible('sortingFieldDiv') && utils.isVisible('sortingOrderDiv')) {
-            fields.sorting = utils.asString('sortingOrder') + utils.asString('sortingField');
-
+            //fields.sorting = utils.asString('sortingOrder') + utils.asString('sortingField');
+            fields.sorting = document.getElementById('sortingParamsList').innerText;
         }
         if (utils.isVisible('filteringDiv') && utils.isVisible('filteringFieldDiv') && utils.isVisible('filteringComparatorDiv') && utils.isVisible('filteringValueDiv')) {
-            fields.filtering =
+            /*fields.filtering =
                 utils.asString('filteringField') +
                 utils.asString('filteringComparator') +
-                utils.asString('filteringValue');
+                utils.asString('filteringValue');*/
+            fields.filtering = document.getElementById('filteringParamsList').innerText;
         }
         if (utils.isVisible('routeDiv')) {
             if (utils.isVisible('routeIdDiv')) fields.routeId = utils.asInt('routeId');
             if (utils.isVisible('routeNameDiv')) fields.routeName = utils.asString('routeName');
             if (utils.isVisible('routeCoordinatesXDiv')) fields.routeCoordinatesX = utils.asInt('routeCoordinatesX');
             if (utils.isVisible('routeCoordinatesYDiv')) fields.routeCoordinatesY = utils.asInt('routeCoordinatesY');
-            if (utils.isVisible('routeCreationDateDiv')) fields.routeCreationDate = utils.asString('routeCreationDate');
+            if (utils.isVisible('routeCreationDateDiv')) fields.routeCreationDate = `${utils.asString('routeCreationDate')}T00:00:00Z`;
             if (utils.isVisible('routeFromFramedBlock')) {
                 if (utils.isVisible('routeFromXDiv')) fields.routeFromX = utils.asInt('routeFromX');
                 if (utils.isVisible('routeFromYDiv')) fields.routeFromY = utils.asInt('routeFromY');
@@ -603,6 +608,10 @@ const modes = {
             utils.clearErrors();
             utils.resultText('');
             const fields = utils.getFields();
+            if (fields.sorting === undefined || fields.sorting === null || fields.sorting === '') {
+                utils.error('Не указана сортировка');
+                return;
+            }
             const url = new URL(`https://localhost:22401/api/v1/navigator/routes/${fields.routeFromName}/${fields.routeToName}/${fields.sorting}`);
             try {
                 const response = await fetch(url, {

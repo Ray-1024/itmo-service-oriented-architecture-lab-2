@@ -1,5 +1,6 @@
 package soa.collectionservice.collectionservice.model.dto;
 
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -26,7 +27,7 @@ public class RouteDto {
     @XmlElement(required = true)
     private CoordinatesDto coordinates; //Поле не может быть null
     @XmlElement
-    private Date creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
+    private String creationDate; //Поле не может быть null, Значение этого поля должно генерироваться автоматически
     @XmlElement
     private LocationDto from; //Поле может быть null
     @XmlElement(required = true)

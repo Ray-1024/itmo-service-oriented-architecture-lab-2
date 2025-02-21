@@ -2,17 +2,17 @@ package soa.collectionservice.collectionservice.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import soa.collectionservice.collectionservice.exception.InvalidInputException;
 import soa.collectionservice.collectionservice.exception.InvalidQueryParamException;
+import soa.collectionservice.collectionservice.exception.OtherErrorException;
 import soa.collectionservice.collectionservice.model.dto.ErrorDto;
 import soa.collectionservice.collectionservice.model.dto.GroupInfoDto;
 import soa.collectionservice.collectionservice.model.dto.InvalidParamDto;
 import soa.collectionservice.collectionservice.model.dto.RouteDto;
 import soa.collectionservice.collectionservice.repository.RouteRepository;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -20,6 +20,60 @@ public class RouteService {
 
     @Inject
     private RouteRepository routeRepository;
+
+    private void invalidInput(String paramName, String paramMessage) throws InvalidInputException {
+        throw InvalidInputException.builder()
+                .invalidParams(List.of(
+                        InvalidParamDto.builder()
+                                .paramName(paramName)
+                                .message(paramMessage)
+                                .build()
+                ))
+                .error(ErrorDto.builder()
+                        .message("Wrong route param")
+                        .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
+                        .build())
+                .build();
+    }
+
+    private void validateRoute(RouteDto routeDto, boolean isCreate) {
+        if (routeDto == null) throw OtherErrorException.builder()
+                .error(ErrorDto.builder().message("Route can't be null").time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date())).build())
+                .build();
+        if (routeDto.getName() == null || routeDto.getName().isEmpty())
+            invalidInput("name", "Route.name can't be empty or null");
+        if (routeDto.getCoordinates() == null)
+            invalidInput("coordinates", "Coordinates can't be null");
+        if (routeDto.getCoordinates().getX() > 510)
+            invalidInput("coordinates.x", "Coordinates.x can't be greater than 510");
+        if (routeDto.getCoordinates().getY() == null)
+            invalidInput("coordinates.y", "Coordinates.y can't be null");
+        if (!isCreate) {
+            if (routeDto.getId() == null || routeDto.getId() <= 0)
+                invalidInput("creationDate", "Route.creationDate can't be null or less than 1");
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            try {
+                Date date = format.parse(routeDto.getCreationDate());
+                routeDto.setCreationDate(format.format(date));
+            } catch (Exception e) {
+                invalidInput("creationDate", "Route.creationDate can't be null and should in format yyyy-MM-dd'T'HH:mm:ss'Z'");
+            }
+        }
+        if (routeDto.getFrom() != null) {
+            if (routeDto.getFrom().getName() == null)
+                invalidInput("from.name", "From.name can't be null");
+            if (routeDto.getFrom().getName().length() > 452)
+                invalidInput("from.name", "From.name too long");
+        }
+        if (routeDto.getTo() == null)
+            invalidInput("to", "Route.to can't be null");
+        if (routeDto.getTo().getName() == null)
+            invalidInput("to.name", "To.name can't be null");
+        if (routeDto.getTo().getName().length() > 452)
+            invalidInput("to.name", "To.name too long");
+        if (routeDto.getDistance() <= 1)
+            invalidInput("distance", "Route.distance can't be less than 1 or equal to 1");
+    }
 
     private boolean isRouteField(String fieldName) {
         return Set.of(
@@ -30,62 +84,110 @@ public class RouteService {
         ).contains(fieldName);
     }
 
-    private void validateSorting(String sorting) {
-        if (Objects.isNull(sorting) || sorting.isEmpty()) return;
-        if (isRouteField(sorting) || (sorting.charAt(0) == '<' && isRouteField(sorting.substring(1)))) return;
-        throw InvalidQueryParamException.builder()
-                .invalidParams(List.of(InvalidParamDto.builder()
-                        .paramName("sort")
-                        .message("sort must be '' or '{fieldName}' or '<{fieldName}'")
-                        .build()))
-                .error(ErrorDto.builder()
-                        .message("Wrong query parameter")
-                        .time(Instant.now())
-                        .build())
-                .build();
+    private Class<?> getFieldClass(String fieldName) {
+        return switch (fieldName) {
+            case "id", "coordinates.x", "coordinates.y" -> Long.class;
+            case "name", "from.name", "to.name" -> String.class;
+            case "creationDate" -> Date.class;
+            case "from.x", "from.y", "to.x", "to.y" -> Integer.class;
+            case "from.z", "to.z", "distance" -> Double.class;
+            default ->
+                    throw new OtherErrorException(new ErrorDto("Wrong field name", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date())));
+        };
     }
 
-    private void validateFiltering(String filtering) {
-        if (filtering == null || filtering.isEmpty()) return;
-        String[] split = filtering.split("<|>|<=|>=|=|!=");
-        if (split.length == 2 && isRouteField(split[0])) return;
-        throw InvalidQueryParamException.builder()
-                .invalidParams(List.of(InvalidParamDto.builder()
-                        .paramName("filter")
-                        .message("filter must be {fieldName} =/!=/</>/<=/>= {value}")
-                        .build()))
-                .error(ErrorDto.builder()
-                        .message("Wrong query parameter")
-                        .time(Instant.now())
-                        .build())
-                .build();
+    private List<Map.Entry<String, Boolean>> parseSorting(String sorting) {
+        if (Objects.isNull(sorting) || sorting.isEmpty()) return List.of();
+        String[] sortingFields = sorting.split(";");
+
+        /*
+        if (!Arrays.stream(sortingFields).allMatch(sort ->
+                isRouteField(sort) ||
+                        (sorting.charAt(0) == '<' && isRouteField(sorting.substring(1)))
+        )) {
+         */
+        if (!Arrays.stream(sortingFields).allMatch(sort ->
+                isRouteField(sort) ||
+                        (sort.charAt(0) == '<' && isRouteField(sort.substring(1)))
+        ) || Arrays.stream(sortingFields).filter(str -> !str.isEmpty()).map(str -> str.charAt(0) == '<' ? str.substring(1) : str).distinct().count() != sortingFields.length) {
+            throw InvalidQueryParamException.builder()
+                    .invalidParams(List.of(InvalidParamDto.builder()
+                            .paramName("sort")
+                            .message("sort must be '' or list in format '{fieldName}' or '<{fieldName}'")
+                            .build()))
+                    .error(ErrorDto.builder()
+                            .message("Wrong query parameter")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
+                            .build())
+                    .build();
+        }
+        return Arrays.stream(sortingFields).map(str -> {
+                    boolean asc = str.charAt(0) != '<';
+                    return Map.entry(asc ? str : str.substring(1), asc);
+                }
+        ).toList();
+    }
+
+    private List<Map.Entry<String, Map.Entry<String, String>>> parseFiltering(String filtering) {
+        if (filtering == null || filtering.isEmpty()) return List.of();
+        String[] split = filtering.split(";");
+
+        if (!Arrays.stream(split).allMatch(str -> {
+                    String[] parts = str.split("=|!=|<|<=|>|>=");
+                    if (parts.length != 2) return false;
+                    if (!isRouteField(parts[0])) return false;
+                    Class<?> clazz = getFieldClass(parts[0]);
+                    try {
+                        if (clazz == Integer.class) {
+                            int val = Integer.parseInt(parts[1]);
+                            return true;
+                        } else if (clazz == Long.class) {
+                            long val = Long.parseLong(parts[1]);
+                            return true;
+                        } else if (clazz == Double.class) {
+                            double val = Double.parseDouble(parts[1]);
+                            return true;
+                        } else if (clazz == String.class) {
+                            String val = parts[1];
+                            return true;
+                        } else if (clazz == Date.class) {
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                            Date date = format.parse(parts[1]);
+                            return true;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    return false;
+                }
+        )) {
+            throw InvalidQueryParamException.builder()
+                    .invalidParams(List.of(InvalidParamDto.builder()
+                            .paramName("filter")
+                            .message("filter must be {fieldName} =/!=/</>/<=/>= {value} in semicolon list")
+                            .build()))
+                    .error(ErrorDto.builder()
+                            .message("Wrong query parameter")
+                            .time(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new Date()))
+                            .build())
+                    .build();
+        }
+        return Arrays.stream(split).map(str -> {
+                    String[] parts = str.split("=|!=|<|<=|>|>=");
+                    String value = parts[1];
+                    return Map.entry(
+                            parts[0],
+                            Map.entry(str.substring(parts[0].length(), str.length() - parts[1].length()), value));
+                }
+        ).toList();
     }
 
     public List<RouteDto> getAllRoutes(int page, int size, String sort, String filter) {
-        validateSorting(sort);
-        validateFiltering(filter);
-
-        boolean ascending = true;
-        String sortBy = null;
-        String filterPredicate = null;
-        String filterBy = null;
-        String filterValue = null;
-
-        if (Objects.nonNull(sort) && !sort.isEmpty()) {
-            ascending = !sort.startsWith("<");
-            if (ascending) sortBy = sort;
-            else sortBy = sort.substring(1);
-        }
-
-        if (Objects.nonNull(filter) && !filter.isEmpty()) {
-            String[] split = filter.split("<|>|<=|>=|=|!=");
-            filterBy = split[0];
-            filterValue = split[1];
-            filterPredicate = filter.substring(filterBy.length(), filter.length() - filterValue.length());
-        }
-
+        if (page < 1) invalidInput("page", "Page number must be greater than 0");
+        if (size < 1 || size > 100) invalidInput("size", "Page size must be from range [1:100]");
+        List<Map.Entry<String, Boolean>> sorting = parseSorting(sort);
+        List<Map.Entry<String, Map.Entry<String, String>>> filtering = parseFiltering(filter);
         return routeRepository.getAll(
-                page, size, sortBy, ascending, filterBy, filterPredicate, filterValue
+                page, size, sorting, filtering
         ).stream().map(RouteDto::fromEntity).collect(Collectors.toList());
     }
 
@@ -94,10 +196,12 @@ public class RouteService {
     }
 
     public RouteDto createRoute(RouteDto route) {
+        validateRoute(route, true);
         return RouteDto.fromEntity(routeRepository.create(route));
     }
 
     public RouteDto updateRoute(RouteDto route) {
+        validateRoute(route, false);
         return RouteDto.fromEntity(routeRepository.update(route));
     }
 

@@ -13,5 +13,5 @@ import java.time.Instant;
 @Builder
 public class ErrorDto {
     private String message;
-    private Instant time;
+    private String time;
 }

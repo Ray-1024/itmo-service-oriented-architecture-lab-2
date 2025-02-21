@@ -53,18 +53,9 @@
 
 
         <div id="sortingDiv" class="framedBlock">
-            <div id="hideSortingDiv">
-                Не указывать параметры сортировки:
-                <input id="hideSorting" type="checkbox" onclick="
-            if(document.getElementById('hideSorting').checked){
-                utils.hide('sortingFieldDiv');
-                utils.hide('sortingOrderDiv');
-            }
-            else{
-                utils.show('sortingFieldDiv');
-                utils.show('sortingOrderDiv');
-            }
-"></div>
+            <div>Указанные параметры сортировки:
+                <div id="sortingParamsList"></div>
+            </div>
             <div id="sortingFieldDiv">Поле для сортировки путей: <select id="sortingField">
                 <option>id</option>
                 <option>name</option>
@@ -84,24 +75,24 @@
                 <input type="radio" name="sortingOrder" value="" checked>По неубыванию
                 <input type="radio" name="sortingOrder" value="<">По невозрастанию
             </div>
+            <div>
+                <button onclick="
+                    document.getElementById('sortingParamsList').innerText +=
+                    (document.getElementById('sortingParamsList').innerText === '' ? '' : ';') +
+                    utils.asString('sortingOrder') + utils.asString('sortingField');
+                    ">Добавить параметр сортировки
+                </button>
+                <button onclick="document.getElementById('sortingParamsList').innerText = '';">Очистить параметры
+                    сортировки
+                </button>
+            </div>
         </div>
 
 
         <div id="filteringDiv" class="framedBlock">
-            <div id="hideFilteringDiv">
-                Не указывать параметры фильтрации:
-                <input id="hideFiltering" type="checkbox" onclick="
-            if(document.getElementById('hideFiltering').checked){
-                utils.hide('filteringFieldDiv');
-                utils.hide('filteringComparatorDiv');
-                utils.hide('filteringValueDiv');
-            }
-            else{
-                utils.show('filteringFieldDiv');
-                utils.show('filteringComparatorDiv');
-                utils.show('filteringValueDiv');
-            }
-"></div>
+            <div>Указанные параметры фильтрации:
+                <div id="filteringParamsList"></div>
+            </div>
             <div id="filteringFieldDiv">Поле для фильтрации путей: <select id="filteringField">
                 <option>id</option>
                 <option>name</option>
@@ -126,6 +117,19 @@
                 <option>>=</option>
             </select></div>
             <div id="filteringValueDiv">Значение для условия фильтрации:<input type="text" id="filteringValue"></div>
+            <div>
+                <button onclick="
+                    document.getElementById('filteringParamsList').innerText +=
+                    (document.getElementById('filteringParamsList').innerText === '' ? '' : ';') +
+                    utils.asString('filteringField') +
+                    utils.asString('filteringComparator') +
+                    utils.asString('filteringValue');
+                    ">Добавить параметр фильтрации
+                </button>
+                <button onclick="document.getElementById('filteringParamsList').innerText = '';">Очистить параметры
+                    фильтрации
+                </button>
+            </div>
         </div>
 
 
